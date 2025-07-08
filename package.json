@@ -1,0 +1,172 @@
+{
+  "name": "vaulttap-megastructure",
+  "version": "2.0.0",
+  "description": "Production-Ready VaultTap Mesh Finance Platform",
+  "private": true,
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "sdk",
+    "infra/*"
+  ],
+  "scripts": {
+    "start": "node server/production.js",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "nodemon --exec ts-node server/production.ts",
+    "dev:client": "vite",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "vite build",
+    "build:server": "tsc -p server/tsconfig.json",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:e2e": "playwright test",
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "type-check": "tsc --noEmit",
+    "clean": "rimraf dist node_modules/.cache",
+    "docker:build": "docker build -t vaulttap:latest .",
+    "docker:run": "docker run -p 3000:3000 vaulttap:latest",
+    "deploy:staging": "bash scripts/deploy.sh staging",
+    "deploy:production": "bash scripts/deploy.sh production",
+    "db:migrate": "npx prisma migrate deploy",
+    "db:seed": "npx prisma db seed",
+    "db:studio": "npx prisma studio",
+    "infra:plan": "cd infra/terraform && terraform plan",
+    "infra:apply": "cd infra/terraform && terraform apply",
+    "infra:destroy": "cd infra/terraform && terraform destroy",
+    "monitoring:start": "docker-compose -f docker-compose.monitoring.yml up -d",
+    "monitoring:stop": "docker-compose -f docker-compose.monitoring.yml down",
+    "security:audit": "npm audit && npm run security:snyk",
+    "security:snyk": "snyk test",
+    "performance:test": "artillery run tests/performance/load-test.yml",
+    "docs:generate": "typedoc --out docs src",
+    "release": "semantic-release",
+    "postinstall": "husky install"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "compression": "^1.7.4",
+    "express-rate-limit": "^7.1.5",
+    "express-validator": "^7.0.1",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "crypto": "^1.0.1",
+    "pg": "^8.11.3",
+    "redis": "^4.6.10",
+    "aws-sdk": "^2.1498.0",
+    "@aws-sdk/client-s3": "^3.449.0",
+    "@aws-sdk/client-ses": "^3.449.0",
+    "@aws-sdk/client-bedrock": "^3.449.0",
+    "stripe": "^14.7.0",
+    "paypal-rest-sdk": "^1.8.1",
+    "winston": "^3.11.0",
+    "winston-cloudwatch": "^6.2.0",
+    "prom-client": "^15.0.0",
+    "openai": "^4.20.1",
+    "dotenv": "^16.3.1",
+    "zod": "^3.22.4",
+    "uuid": "^9.0.1",
+    "@types/uuid": "^9.0.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.0",
+    "@types/express": "^4.17.21",
+    "@types/cors": "^2.8.17",
+    "@types/compression": "^1.7.5",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/pg": "^8.10.7",
+    "@types/paypal-rest-sdk": "^1.7.9",
+    "typescript": "^5.2.2",
+    "ts-node": "^10.9.1",
+    "nodemon": "^3.0.1",
+    "concurrently": "^8.2.2",
+    "vite": "^4.5.0",
+    "@vitejs/plugin-react": "^4.1.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
+    "@types/jest": "^29.5.5",
+    "supertest": "^6.3.3",
+    "@types/supertest": "^2.0.16",
+    "playwright": "^1.40.0",
+    "@playwright/test": "^1.40.0",
+    "eslint": "^8.51.0",
+    "@typescript-eslint/eslint-plugin": "^6.7.4",
+    "@typescript-eslint/parser": "^6.7.4",
+    "prettier": "^3.0.3",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.0.2",
+    "rimraf": "^5.0.5",
+    "typedoc": "^0.25.3",
+    "semantic-release": "^22.0.5",
+    "snyk": "^1.1244.0",
+    "artillery": "^2.0.3",
+    "@commitlint/cli": "^18.4.3",
+    "@commitlint/config-conventional": "^18.4.3"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "collectCoverageFrom": [
+      "server/**/*.{ts,js}",
+      "client/**/*.{ts,tsx}",
+      "!**/*.d.ts",
+      "!**/node_modules/**"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 80,
+        "functions": 80,
+        "lines": 80,
+        "statements": 80
+      }
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vaulttap/megastructure.git"
+  },
+  "keywords": [
+    "blockchain",
+    "mesh-networking",
+    "bluetooth",
+    "ai-agents",
+    "fintech",
+    "humanitarian",
+    "diaspora",
+    "vault-engine",
+    "zero-knowledge",
+    "serverless",
+    "production-ready",
+    "aws",
+    "terraform",
+    "kubernetes"
+  ],
+  "author": "VaultTap Team",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/vaulttap/megastructure/issues"
+  },
+  "homepage": "https://vaulttap.com",
+  "volta": {
+    "node": "18.18.0",
+    "npm": "9.8.1"
+  }
+}

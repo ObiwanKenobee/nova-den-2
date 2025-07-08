@@ -1,0 +1,58 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "pipeline": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**", "build/**", "lib/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "test": {
+      "dependsOn": ["build"],
+      "outputs": ["coverage/**"]
+    },
+    "lint": {
+      "outputs": []
+    },
+    "type-check": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "clean": {
+      "cache": false
+    },
+    "mesh-core#test-routing": {
+      "dependsOn": ["mesh-core#build"]
+    },
+    "vault-engine#analyze-dna": {
+      "dependsOn": ["vault-engine#build"]
+    },
+    "ai-agents#train-models": {
+      "dependsOn": ["ai-agents#build"],
+      "env": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_REGION"]
+    },
+    "mobile-wallet#dev": {
+      "dependsOn": ["mesh-core#build", "vault-engine#build"],
+      "cache": false,
+      "persistent": true
+    },
+    "mesh-terminal#dev": {
+      "dependsOn": ["mesh-core#build", "sync-orchestrator#build"],
+      "cache": false,
+      "persistent": true
+    },
+    "admin-console#dev": {
+      "dependsOn": ["cloud-api#build", "ai-agents#build"],
+      "cache": false,
+      "persistent": true
+    }
+  },
+  "globalDependencies": [
+    "**/.env",
+    "**/.env.local",
+    "**/tsconfig.json",
+    "**/package.json"
+  ]
+}

@@ -1,0 +1,89 @@
+# Prometheus configuration for VaultTap monitoring
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: "vaulttap-production"
+    region: "us-west-2"
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+# Load rules once and periodically evaluate them
+rule_files:
+  - "alert_rules.yml"
+
+# Scrape configurations
+scrape_configs:
+  # VaultTap application metrics
+  - job_name: "vaulttap-app"
+    static_configs:
+      - targets: ["vaulttap-app:3000"]
+    metrics_path: "/metrics"
+    scrape_interval: 15s
+    scrape_timeout: 10s
+
+  # Node exporter for system metrics
+  - job_name: "node-exporter"
+    static_configs:
+      - targets: ["node-exporter:9100"]
+
+  # PostgreSQL metrics
+  - job_name: "postgres-exporter"
+    static_configs:
+      - targets: ["postgres-exporter:9187"]
+
+  # Redis metrics
+  - job_name: "redis-exporter"
+    static_configs:
+      - targets: ["redis-exporter:9121"]
+
+  # Nginx metrics
+  - job_name: "nginx-exporter"
+    static_configs:
+      - targets: ["nginx-exporter:9113"]
+
+  # AWS CloudWatch metrics
+  - job_name: "cloudwatch-exporter"
+    static_configs:
+      - targets: ["cloudwatch-exporter:9106"]
+    scrape_interval: 60s
+
+  # ECS container metrics
+  - job_name: "ecs-metrics"
+    ec2_sd_configs:
+      - region: us-west-2
+        port: 9100
+        filters:
+          - name: tag:Environment
+            values: ["production"]
+          - name: tag:Project
+            values: ["vaulttap"]
+    relabel_configs:
+      - source_labels: [__meta_ec2_tag_Name]
+        target_label: instance
+      - source_labels: [__meta_ec2_tag_Environment]
+        target_label: environment
+
+# Remote write configuration for long-term storage
+remote_write:
+  - url: "https://prometheus-us-central1.grafana.net/api/prom/push"
+    basic_auth:
+      username: "YOUR_GRAFANA_CLOUD_USERNAME"
+      password: "YOUR_GRAFANA_CLOUD_API_KEY"
+    write_relabel_configs:
+      - source_labels: [__name__]
+        regex: "vaulttap_.*|http_.*|database_.*|payment_.*"
+        action: keep
+
+# Storage configuration
+storage:
+  tsdb:
+    path: /prometheus
+    retention.time: 15d
+    retention.size: 50GB

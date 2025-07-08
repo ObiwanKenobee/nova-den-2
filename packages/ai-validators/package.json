@@ -1,0 +1,39 @@
+{
+  "name": "@vaulttap/ai-validators",
+  "version": "1.0.0",
+  "description": "AI agents for ritual validation, elder consent, and mesh consensus",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "jest",
+    "train-models": "node dist/train-models.js",
+    "lint": "eslint src/**/*.ts",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock": "^3.450.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.450.0",
+    "@langchain/aws": "^0.0.2",
+    "@langchain/core": "^0.1.0",
+    "openai": "^4.20.0",
+    "anthropic": "^0.6.0",
+    "tensorflow": "^4.10.0",
+    "@tensorflow/tfjs-node": "^4.10.0",
+    "jimp": "^0.22.0",
+    "wav": "^1.0.2",
+    "speech-to-text": "^2.3.0",
+    "uuid": "^9.0.1",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/uuid": "^9.0.5",
+    "@types/wav": "^1.0.0",
+    "typescript": "^5.2.2",
+    "@types/node": "^20.8.0"
+  },
+  "files": [
+    "dist/**/*"
+  ]
+}

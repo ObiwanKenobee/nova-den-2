@@ -1,0 +1,34 @@
+{
+  "name": "@vaulttap/zk-auth",
+  "version": "1.0.0",
+  "description": "Zero-knowledge ritual proofs using circom and snarkjs",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc && npm run compile-circuits",
+    "dev": "tsc --watch",
+    "test": "jest",
+    "compile-circuits": "node dist/compileZKP.js",
+    "setup-ceremony": "node dist/setupCeremony.js",
+    "lint": "eslint src/**/*.ts",
+    "clean": "rm -rf dist circuits/build"
+  },
+  "dependencies": {
+    "snarkjs": "^0.7.0",
+    "circomlib": "^2.0.5",
+    "ffjavascript": "^0.2.60",
+    "uuid": "^9.0.1",
+    "noble-curves": "^1.2.0",
+    "noble-hashes": "^1.3.2"
+  },
+  "devDependencies": {
+    "@types/uuid": "^9.0.5",
+    "circom": "^2.1.6",
+    "typescript": "^5.2.2",
+    "@types/node": "^20.8.0"
+  },
+  "files": [
+    "dist/**/*",
+    "circuits/**/*"
+  ]
+}

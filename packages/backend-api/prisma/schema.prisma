@@ -1,0 +1,278 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  publicKey   String   @unique
+  privateKey  String?  // Encrypted
+  name        String?
+  email       String?  @unique
+  phone       String?
+  trustScore  Int      @default(100)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lastActiveAt DateTime @default(now())
+
+  // Relationships
+  vaults              Vault[]
+  ownedVaults         Vault[]              @relation("VaultOwner")
+  transactions        Transaction[]
+  ritualVerifications RitualVerification[]
+  peerConnections     PeerConnection[]
+  meshNodes           MeshNode[]
+  settings            UserSettings?
+
+  @@map("users")
+}
+
+model Vault {
+  id                String    @id @default(cuid())
+  name              String
+  description       String?
+  type              VaultType
+  balance           Decimal   @default(0)
+  yieldRate         Decimal   @default(0) // Percentage
+  isLocked          Boolean   @default(false)
+  lockUntil         DateTime?
+  minimumConsensus  Int?      // Percentage for cooperative/community vaults
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Owner and participants
+  ownerId      String
+  owner        User   @relation("VaultOwner", fields: [ownerId], references: [id])
+  participants User[]
+
+  // Relationships
+  transactions      Transaction[]
+  unlockConditions  UnlockCondition[]
+  consensusVotes    ConsensusVote[]
+  yieldDistributions YieldDistribution[]
+
+  @@map("vaults")
+}
+
+model Transaction {
+  id            String            @id @default(cuid())
+  fromUserId    String
+  toUserId      String?
+  vaultId       String?
+  amount        Decimal
+  currency      String            @default("VT")
+  type          TransactionType
+  status        TransactionStatus @default(PENDING)
+  message       String?
+  ritual        String?
+  networkFee    Decimal           @default(0)
+  blockHash     String?
+  signature     String
+  nonce         String
+  timestamp     DateTime          @default(now())
+  confirmedAt   DateTime?
+
+  // Relationships
+  fromUser User  @relation(fields: [fromUserId], references: [id])
+  vault    Vault? @relation(fields: [vaultId], references: [id])
+
+  // Mesh networking
+  meshRouting MeshRouting[]
+
+  @@map("transactions")
+}
+
+model RitualVerification {
+  id              String           @id @default(cuid())
+  userId          String
+  ritualType      String
+  status          VerificationStatus @default(PENDING)
+  proofData       Json?
+  verifierIds     String[]
+  confidenceScore Decimal?
+  timestamp       DateTime         @default(now())
+  expiresAt       DateTime?
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("ritual_verifications")
+}
+
+model PeerConnection {
+  id              String   @id @default(cuid())
+  userId          String
+  peerId          String
+  peerPublicKey   String
+  connectionType  String   // "bluetooth", "wifi_direct", etc.
+  signalStrength  Int?
+  distance        Decimal?
+  isActive        Boolean  @default(true)
+  capabilities    String[] // JSON array of capabilities
+  trustScore      Int      @default(0)
+  connectedAt     DateTime @default(now())
+  lastSeenAt      DateTime @default(now())
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, peerId])
+  @@map("peer_connections")
+}
+
+model MeshNode {
+  id              String   @id @default(cuid())
+  userId          String
+  nodeId          String   @unique
+  publicKey       String
+  isRelay         Boolean  @default(false)
+  capacity        Int      @default(10)
+  currentLoad     Int      @default(0)
+  reliability     Decimal  @default(1.0)
+  latitude        Decimal?
+  longitude       Decimal?
+  isOnline        Boolean  @default(false)
+  lastPingAt      DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  // Relationships
+  user        User          @relation(fields: [userId], references: [id])
+  routing     MeshRouting[]
+
+  @@map("mesh_nodes")
+}
+
+model MeshRouting {
+  id            String   @id @default(cuid())
+  transactionId String
+  fromNodeId    String
+  toNodeId      String
+  hopCount      Int      @default(0)
+  latency       Int?     // milliseconds
+  timestamp     DateTime @default(now())
+
+  // Relationships
+  transaction Transaction @relation(fields: [transactionId], references: [id])
+  fromNode    MeshNode    @relation(fields: [fromNodeId], references: [nodeId])
+
+  @@map("mesh_routing")
+}
+
+model UnlockCondition {
+  id                   String  @id @default(cuid())
+  vaultId              String
+  requiresRitual       Boolean @default(false)
+  ritualType           String?
+  requiresConsensus    Boolean @default(false)
+  consensusThreshold   Int?    // Percentage
+  requiresTimelock     Boolean @default(false)
+  timelockDuration     Int?    // Seconds
+  requiresMultiSig     Boolean @default(false)
+  requiredSignatures   Int?
+
+  // Relationships
+  vault Vault @relation(fields: [vaultId], references: [id])
+
+  @@map("unlock_conditions")
+}
+
+model ConsensusVote {
+  id        String   @id @default(cuid())
+  vaultId   String
+  userId    String
+  vote      Boolean
+  proposal  String?  // What the vote is for
+  timestamp DateTime @default(now())
+
+  // Relationships
+  vault Vault @relation(fields: [vaultId], references: [id])
+
+  @@unique([vaultId, userId, proposal])
+  @@map("consensus_votes")
+}
+
+model YieldDistribution {
+  id            String   @id @default(cuid())
+  vaultId       String
+  totalYield    Decimal
+  yieldRate     Decimal
+  distributedAt DateTime @default(now())
+  blockNumber   Int?
+
+  // Relationships
+  vault Vault @relation(fields: [vaultId], references: [id])
+
+  @@map("yield_distributions")
+}
+
+model UserSettings {
+  id                   String  @id @default(cuid())
+  userId               String  @unique
+  bluetoothEnabled     Boolean @default(true)
+  autoRelay            Boolean @default(true)
+  coverTraffic         Boolean @default(true)
+  biometricAuth        Boolean @default(true)
+  ritualAuth           Boolean @default(true)
+  autoLock             Boolean @default(true)
+  autoLockTimeout      Int     @default(300) // Seconds
+  emergencyWipeEnabled Boolean @default(false)
+  emergencyWipePattern String?
+  preferredLanguage    String  @default("en")
+  notificationsEnabled Boolean @default(true)
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("user_settings")
+}
+
+model AIModelExecution {
+  id               String   @id @default(cuid())
+  modelType        String   // "whisper", "trust_score", "story_embedding"
+  inputData        Json
+  outputData       Json?
+  status           String   @default("pending")
+  executionTime    Int?     // milliseconds
+  confidenceScore  Decimal?
+  errorMessage     String?
+  timestamp        DateTime @default(now())
+
+  @@map("ai_model_executions")
+}
+
+enum VaultType {
+  PERSONAL
+  COOPERATIVE
+  COMMUNITY
+}
+
+enum TransactionType {
+  SEND
+  RECEIVE
+  DEPOSIT
+  WITHDRAWAL
+  YIELD
+  FEE
+}
+
+enum TransactionStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+  CANCELLED
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  FAILED
+  EXPIRED
+}

@@ -1,0 +1,38 @@
+{
+  "name": "@vaulttap/crypto-adapters",
+  "version": "1.0.0",
+  "description": "Multi-chain asset bridges and oracles for Ethereum, Bitcoin, Solana, and Cosmos",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "jest",
+    "lint": "eslint src/**/*.ts",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "ethers": "^6.8.0",
+    "web3": "^4.2.0",
+    "@solana/web3.js": "^1.87.3",
+    "@solana/spl-token": "^0.3.8",
+    "bitcoinjs-lib": "^6.1.3",
+    "@cosmjs/stargate": "^0.32.0",
+    "@cosmjs/cosmwasm-stargate": "^0.32.0",
+    "@chainlink/contracts": "^0.6.1",
+    "axios": "^1.5.1",
+    "ws": "^8.14.2",
+    "uuid": "^9.0.1",
+    "big.js": "^6.2.1"
+  },
+  "devDependencies": {
+    "@types/uuid": "^9.0.5",
+    "@types/ws": "^8.5.7",
+    "@types/big.js": "^6.1.0",
+    "typescript": "^5.2.2",
+    "@types/node": "^20.8.0"
+  },
+  "files": [
+    "dist/**/*"
+  ]
+}

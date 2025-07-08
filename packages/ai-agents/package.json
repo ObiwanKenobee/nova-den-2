@@ -1,0 +1,35 @@
+{
+  "name": "@vaulttap/ai-agents",
+  "version": "1.0.0",
+  "description": "Multi-agent GenAI orchestration for VaultTap governance and trust scoring",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "test": "jest",
+    "lint": "eslint src --ext .ts",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@vaulttap/core": "*",
+    "@aws-sdk/client-bedrock": "^3.454.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.454.0",
+    "@aws-sdk/client-sagemaker": "^3.454.0",
+    "@aws-sdk/client-transcribe": "^3.454.0",
+    "@aws-sdk/client-step-functions": "^3.454.0",
+    "@aws-sdk/client-lambda": "^3.454.0",
+    "@aws-sdk/client-s3": "^3.454.0",
+    "langchain": "^0.0.136",
+    "tiktoken": "^1.0.7",
+    "zod": "^3.21.4",
+    "winston": "^3.10.0",
+    "bullmq": "^4.8.0",
+    "ioredis": "^5.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.4.5",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.1.6"
+  }
+}

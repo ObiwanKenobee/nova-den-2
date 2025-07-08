@@ -1,0 +1,165 @@
+version: "3.8"
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: vaulttap-postgres
+    environment:
+      POSTGRES_DB: vaulttap
+      POSTGRES_USER: vaulttap
+      POSTGRES_PASSWORD: vaulttap_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vaulttap"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: vaulttap-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Backend API
+  backend-api:
+    build:
+      context: ../packages/backend-api
+      dockerfile: Dockerfile
+    container_name: vaulttap-backend
+    environment:
+      DATABASE_URL: postgresql://vaulttap:vaulttap_password@postgres:5432/vaulttap
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: development
+      JWT_SECRET: vaulttap_jwt_secret_development
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      PINECONE_API_KEY: ${PINECONE_API_KEY}
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ../packages/backend-api:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # Admin Dashboard (Next.js)
+  admin-dashboard:
+    build:
+      context: ../apps/admin-dashboard
+      dockerfile: Dockerfile.dev
+    container_name: vaulttap-admin
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+      NEXT_PUBLIC_GRAPHQL_URL: http://localhost:4000/graphql
+    ports:
+      - "3001:3000"
+    volumes:
+      - ../apps/admin-dashboard:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # Hardhat Node (Local Blockchain)
+  hardhat-node:
+    build:
+      context: ../packages/vault-protocol
+      dockerfile: Dockerfile
+    container_name: vaulttap-blockchain
+    ports:
+      - "8545:8545"
+    volumes:
+      - ../packages/vault-protocol:/app
+      - /app/node_modules
+    command: npx hardhat node --hostname 0.0.0.0
+
+  # IPFS Node (for decentralized storage)
+  ipfs:
+    image: ipfs/kubo:latest
+    container_name: vaulttap-ipfs
+    environment:
+      IPFS_PROFILE: server
+    ports:
+      - "4001:4001"
+      - "5001:5001"
+      - "8080:8080"
+    volumes:
+      - ipfs_data:/data/ipfs
+
+  # Nginx (Load Balancer / Reverse Proxy)
+  nginx:
+    image: nginx:alpine
+    container_name: vaulttap-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - backend-api
+      - admin-dashboard
+
+  # Prometheus (Metrics)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: vaulttap-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+
+  # Grafana (Dashboard)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: vaulttap-grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    ports:
+      - "3002:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+
+  # Jaeger (Distributed Tracing)
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: vaulttap-jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: true
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+
+volumes:
+  postgres_data:
+  redis_data:
+  ipfs_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  default:
+    name: vaulttap-network
